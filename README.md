@@ -2,7 +2,7 @@
 
 Needs more testing
 
-```
+```python
 from agc import AGC
 
 optimizer.zero_grad()        
