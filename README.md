@@ -1,6 +1,18 @@
 # Adaptive-Gradient-Clipping
 
-WIP
+Needs more testing
+
+```
+from agc import AGC
+
+optimizer.zero_grad()        
+loss, output = model(data)
+loss.backward()
+
+AGC(model.parameters(), args.clip)
+
+optimizer.step()
+```
 
 [Yannic Kilchers Video](https://www.youtube.com/watch?v=rNkHjZtH0RQ&ab_channel=YannicKilcher)
 
