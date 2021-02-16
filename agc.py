@@ -5,7 +5,7 @@ from typing import Union, Iterable
 
 _tensor_or_tensors = Union[torch.Tensor, Iterable[torch.Tensor]]
 
-def AGC(parameters: _tensor_or_tensors, clip: float = 1e-3, eps: float = 1e-3) -> torch.Tensor:
+def AGC(parameters: _tensor_or_tensors, clip: float = 1e-3, eps: float = 1e-3):
     """Adaptively clips gradients of an iterable of parameters.
     
     Args:
@@ -18,19 +18,19 @@ def AGC(parameters: _tensor_or_tensors, clip: float = 1e-3, eps: float = 1e-3) -
     if isinstance(parameters, torch.Tensor):
         parameters = [parameters]
     parameters = [p for p in parameters if p.grad is not None]
+    
     for p in parameters:
-        
         clip_tensor = torch.tensor(clip).to(p.device) 
         eps_tensor = torch.tensor(eps).to(p.device) 
 
         g_norm = unitwise_norm(p.grad)
         p_norm = unitwise_norm(p)
         
-        max_norm = clip_tensor  * torch.max(p_norm, eps_tensor)
+        max_norm = clip_tensor * torch.max(p_norm, eps_tensor)
         p.grad.data.copy_(my_clip(g_norm, max_norm, p.grad))
     
     
-def my_clip(g_norm, max_norm, grad):
+def my_clip(g_norm: torch.Tensor, max_norm: torch.Tensor, grad: torch.Tensor) -> torch.Tensor:
     trigger = g_norm < max_norm
     # This little max(., 1e-6) is distinct from the normal eps and just prevents
     # division by zero. It technically should be impossible to engage.
@@ -56,6 +56,6 @@ def unitwise_norm(x: torch.Tensor) -> torch.Tensor:
     return compute_norm(x, dim, keepdims)
 
 
-def compute_norm(x, dim, keepdims):
+def compute_norm(x: torch.Tensor, dim: list, keepdims: bool) -> torch.Tensor:
     """Axis-wise euclidean norm."""
     return torch.sum(x ** 2, dim=dim, keepdims=keepdims) ** 0.5
