@@ -17,7 +17,7 @@ optimizer.step()
 [Yannic Kilchers Video](https://www.youtube.com/watch?v=rNkHjZtH0RQ&ab_channel=YannicKilcher)
 
 # Citations
-```
+```bibtex
 @article{brock2021high,
   author={Andrew Brock and Soham De and Samuel L. Smith and Karen Simonyan},
   title={High-Performance Large-Scale Image Recognition Without Normalization},
