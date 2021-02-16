@@ -59,15 +59,3 @@ def unitwise_norm(x: torch.Tensor) -> torch.Tensor:
 def compute_norm(x, dim, keepdims):
     """Axis-wise euclidean norm."""
     return torch.sum(x ** 2, dim=dim, keepdims=keepdims) ** 0.5
-
-data, target = next(iter(train_loader))
-
-data, target = data.to(device), target.to(device)
-optimizer.zero_grad()
-output = model(data)
-loss = F.nll_loss(output, target)
-
-AGC(model.parameters(), 0.1, 0.1)
-
-#loss.backward()
-#optimizer.step()
