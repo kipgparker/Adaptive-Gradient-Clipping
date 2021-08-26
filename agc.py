@@ -26,11 +26,7 @@ def AGC(parameters: _tensor_or_tensors, clip: float = 1e-3, eps: float = 1e-3, z
         g_norm = unitwise_norm(p.grad, zero_division_eps)
         p_norm = unitwise_norm(p, eps)
         
-        trigger = (g_norm / p_norm) > clip
-        norm_divergence = p_norm / g_norm * clip
-        
-        grad_scale = torch.where(trigger, norm_divergence, torch.ones_like(g_norm))
-        
+        grad_scale = (p_norm / g_norm * clip).clamp(max=1)        
         p.grad.data.copy_(p.grad * grad_scale)
     
     
@@ -48,4 +44,4 @@ def unitwise_norm(x: torch.Tensor, eps: float) -> torch.Tensor:
         keepdims = True
     else:
         raise ValueError(f'Got a parameter with ndims not in 0-4! {x}')
-    return x.norm(2, dim, keepdims).max(eps)
+    return x.norm(2, dim, keepdims).clamp(min=eps)
