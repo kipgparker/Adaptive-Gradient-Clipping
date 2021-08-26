@@ -31,7 +31,7 @@ def AGC(parameters: _tensor_or_tensors, clip: float = 1e-3, eps: float = 1e-3, z
         
         grad_scale = torch.where(trigger, norm_divergence, torch.ones_like(g_norm))
         
-        p.grad.data.copy_(p.grad * clipped_norm)
+        p.grad.data.copy_(p.grad * grad_scale)
     
     
 def unitwise_norm(x: torch.Tensor, eps: float) -> torch.Tensor:
