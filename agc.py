@@ -26,8 +26,8 @@ def AGC(parameters: _tensor_or_tensors, clip: float = 1e-3, eps: float = 1e-3, z
         g_norm = unitwise_norm(p.grad, zero_division_eps)
         p_norm = unitwise_norm(p, eps)
         
-        trigger = (g_norm / p_norm) > gradient_clip
-        norm_divergence = p_norm / g_norm * gradient_clip
+        trigger = (g_norm / p_norm) > clip
+        norm_divergence = p_norm / g_norm * clip
         
         grad_scale = torch.where(trigger, norm_divergence, torch.ones_like(g_norm))
         
