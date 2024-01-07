@@ -5,7 +5,7 @@ from typing import Union, Iterable
 
 _tensor_or_tensors = Union[torch.Tensor, Iterable[torch.Tensor]]
 
-def AGC(parameters: _tensor_or_tensors, clip: float = 1e-3, eps: float = 1e-3):
+def AGC(parameters: _tensor_or_tensors, clip: float = 1e-3, eps: float = 1e-3, zero_division_eps: float = 1e-6):
     """Adaptively clips gradients of an iterable of parameters.
     
     Args:
@@ -13,33 +13,24 @@ def AGC(parameters: _tensor_or_tensors, clip: float = 1e-3, eps: float = 1e-3):
             single Tensor that will have gradients normalized
         clip: (float) Maximum allowed ratio of update norm to parameter norm.
         eps: (float) epsilon term to prevent clipping of zero-initialized params.
+        zero_division_eps: (float) epsilon term to prevent division by zero.
     
     """
     if isinstance(parameters, torch.Tensor):
         parameters = [parameters]
-    parameters = [p for p in parameters if p.grad is not None]
     
     for p in parameters:
-        clip_tensor = torch.tensor(clip).to(p.device) 
-        eps_tensor = torch.tensor(eps).to(p.device) 
-
-        g_norm = unitwise_norm(p.grad)
-        p_norm = unitwise_norm(p)
+        if p.grad is None:
+            continue
+            
+        g_norm = unitwise_norm(p.grad, zero_division_eps)
+        p_norm = unitwise_norm(p, eps)
         
-        max_norm = clip_tensor * torch.max(p_norm, eps_tensor)
-        p.grad.data.copy_(my_clip(g_norm, max_norm, p.grad))
+        grad_scale = (p_norm / g_norm * clip).clamp(max=1)        
+        p.grad.data.copy_(p.grad * grad_scale)
     
     
-def my_clip(g_norm: torch.Tensor, max_norm: torch.Tensor, grad: torch.Tensor) -> torch.Tensor:
-    trigger = g_norm < max_norm
-    # This little max(., 1e-6) is distinct from the normal eps and just prevents
-    # division by zero. It technically should be impossible to engage.
-    small = torch.tensor(1e-6).to(g_norm.device)
-    clipped_grad = grad * (max_norm / torch.max(g_norm, small))
-    return torch.where(trigger, grad, clipped_grad)
-        
-    
-def unitwise_norm(x: torch.Tensor) -> torch.Tensor:
+def unitwise_norm(x: torch.Tensor, eps: float) -> torch.Tensor:
     """Compute norms of each output unit separately, also for linear layers."""
     if x.ndim <= 1: # Scalars and vectors
         dim = 0
@@ -52,10 +43,5 @@ def unitwise_norm(x: torch.Tensor) -> torch.Tensor:
         dim = [1, 2, 3]
         keepdims = True
     else:
-        raise ValueError(f'Got a parameter with shape not in [1, 2, 4]! {x}')
-    return compute_norm(x, dim, keepdims)
-
-
-def compute_norm(x: torch.Tensor, dim: list, keepdims: bool) -> torch.Tensor:
-    """Axis-wise euclidean norm."""
-    return torch.sum(x ** 2, dim=dim, keepdims=keepdims) ** 0.5
+        raise ValueError(f'Got a parameter with ndims not in 0-4! {x}')
+    return x.norm(2, dim, keepdims).clamp(min=eps)

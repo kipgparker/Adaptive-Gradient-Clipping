@@ -6,6 +6,15 @@ Needs more testing
 
 ## Usage
 
+
+```PYTHON
+def norm(x, eps):
+  return x.norm(2).clamp(min=eps)
+
+def agc(p, g, clip, eps=1e-3, zero_eps=1e-6):
+  return (norm(p, eps) / norm(g, zero_eps) * clip).clamp(max=1)
+```
+
 ```python
 from agc import AGC
 
